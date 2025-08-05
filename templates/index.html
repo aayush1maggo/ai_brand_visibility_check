@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Brand Visibility Check</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: #191919;
+        }
+        .btn-primary {
+            background-color: #2095EA !important;
+            color: white !important;
+            border: none !important;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #1c84d0 !important;
+        }
+        .score-display {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            color: #4f46e5;
+        }
+        .loading {
+            display: none;
+        }
+        .loading.show {
+            display: block;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        .table-container table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-container th,
+        .table-container td {
+            border: 1px solid #e2e8f0;
+            padding: 8px 12px;
+            text-align: center;
+        }
+        .table-container th {
+            background-color: #4f46e5;
+            color: white;
+            font-weight: bold;
+        }
+        .table-container tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .markdown-content {
+            line-height: 1.6;
+        }
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: bold;
+        }
+        .markdown-content h1 {
+            font-size: 1.5em;
+            color: #4f46e5;
+        }
+        .markdown-content h2 {
+            font-size: 1.3em;
+            color: #4f46e5;
+        }
+        .markdown-content h3 {
+            font-size: 1.1em;
+            color: #4f46e5;
+        }
+        .markdown-content p {
+            margin-bottom: 1em;
+        }
+        .markdown-content ul,
+        .markdown-content ol {
+            margin-bottom: 1em;
+            padding-left: 2em;
+        }
+        .markdown-content li {
+            margin-bottom: 0.5em;
+        }
+        .markdown-content strong {
+            font-weight: bold;
+        }
+        .markdown-content em {
+            font-style: italic;
+        }
+        .markdown-content code {
+            background-color: #f1f5f9;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .markdown-content pre {
+            background-color: #f1f5f9;
+            padding: 1em;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 1em;
+        }
+        .markdown-content pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        /* Progress bar animations */
+        .progress-step {
+            transition: all 0.3s ease;
+        }
+        
+        .progress-step.completed {
+            color: #10b981;
+        }
+        
+        .progress-step.active {
+            color: #3b82f6;
+        }
+        
+        /* Loading animation improvements */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .loading-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* Recommendations Visual Format */
+        .recommendations-visual {
+            background-color: #fefefe;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .recommendation-item {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: #fefefe;
+            border-radius: 0.375rem;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .recommendation-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .rating-bar-container {
+            margin-top: 0.5rem;
+        }
+        
+        .rating-bar {
+            display: flex;
+            height: 12px;
+            background-color: #fef3c7;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #f59e0b;
+        }
+        
+        .rating-segment {
+            flex: 1;
+            height: 100%;
+            background-color: #f59e0b;
+            transition: background-color 0.3s ease;
+        }
+        
+        .rating-segment.empty {
+            background-color: #fef3c7;
+        }
+        
+        .rating-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+            text-align: right;
+        }
+        
+        /* Sentiment Drivers Styles */
+        .sentiment-drivers-visual {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sentiment-driver-item {
+            background: #f0f9ff;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #22c55e;
+        }
+        
+        .sentiment-driver-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sentiment-strength-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .sentiment-strength-bar {
+            display: flex;
+            gap: 2px;
+            flex: 1;
+        }
+        
+        .sentiment-strength-segment {
+            width: 20px;
+            height: 12px;
+            background: #22c55e;
+            border-radius: 2px;
+        }
+        
+        .sentiment-strength-segment.empty {
+            background: #e5e7eb;
+        }
+        
+        .sentiment-strength-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            min-width: 60px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <div class="gradient-bg text-white py-8">
+            <div class="container mx-auto px-4">
+                <h1 class="text-4xl font-bold text-center mb-4">AI Brand Visibility Check</h1>
+                <p class="text-xl text-center opacity-90">
+                    Analyse your brand's presence and sentiment in AI-generated search results, with actionable recommendations - optimised for Australian businesses.
+                </p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="container mx-auto px-4 py-8">
+            <!-- Input Form -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <form id="analysisForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="keyword" class="block text-sm font-medium text-gray-700 mb-2">Search Keyword</label>
+                            <input type="text" id="keyword" name="keyword" required 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="e.g., web development, digital marketing, SEO services, accounting services">
+                        </div>
+                        <div>
+                            <label for="brand_name" class="block text-sm font-medium text-gray-700 mb-2">Brand Name</label>
+                            <input type="text" id="brand_name" name="brand_name" required 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="e.g., APW Solutions, Your Company Name, Smith & Co">
+                        </div>
+                    </div>
+                    
+                    <!-- Prompt Generation Options -->
+                    <div class="border-t pt-6 mt-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Search Query Options</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="flex items-center">
+                                    <input type="radio" id="auto_prompts" name="prompt_mode" value="auto" class="mr-3" checked>
+                                    <span class="text-sm text-gray-700">Auto-generate 5 search queries (Recommended)</span>
+                                </label>
+                                <p class="text-xs text-gray-500 ml-6 mt-1">AI will create diverse business-focused search queries for your keyword</p>
+                            </div>
+                            <div>
+                                <label class="flex items-center">
+                                    <input type="radio" id="manual_prompts" name="prompt_mode" value="manual" class="mr-3">
+                                    <span class="text-sm text-gray-700">Enter custom search queries (1-5 queries)</span>
+                                </label>
+                                <p class="text-xs text-gray-500 ml-6 mt-1">Provide your own specific search queries for analysis</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Manual Prompts Section (Hidden by default) -->
+                        <div id="manualPromptsSection" class="mt-4 space-y-3 hidden">
+                            <label class="block text-sm font-medium text-gray-700">Custom Search Queries (1-5 queries):</label>
+                            <div id="customPrompts">
+                                <input type="text" id="custom_prompt_1" name="custom_prompt_1" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                                       placeholder="e.g., Best video production companies Melbourne">
+                                <input type="text" id="custom_prompt_2" name="custom_prompt_2" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                                       placeholder="e.g., Top corporate video agencies Australia (optional)">
+                                <input type="text" id="custom_prompt_3" name="custom_prompt_3" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                                       placeholder="e.g., Leading video production services (optional)">
+                                <input type="text" id="custom_prompt_4" name="custom_prompt_4" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                                       placeholder="e.g., Affordable video production Melbourne (optional)">
+                                <input type="text" id="custom_prompt_5" name="custom_prompt_5" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                                       placeholder="e.g., Professional video marketing agencies (optional)">
+                            </div>
+                            <p class="text-xs text-gray-500">Leave fields empty if you want fewer than 5 queries. At least 1 query is required.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="mb-6">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="performance_mode" name="performance_mode" class="mr-2">
+                                <span class="text-sm text-gray-700">Performance Mode (Faster analysis, slightly less accurate competitor detection)</span>
+                            </label>
+                        </div>
+                        <div class="mb-6">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="demo_mode" name="demo_mode" class="mr-2">
+                                <span class="text-sm text-gray-700">Demo Mode (Quick test with sample data, no API calls)</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" id="analyzeBtn" 
+                                class="btn-primary px-8 py-3 rounded-md font-semibold text-lg">
+                            Grade My Website
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading" class="loading text-center py-8">
+                <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3"></div>
+                        <span class="text-lg font-semibold text-gray-700">Analysing Brand Visibility</span>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                        <div id="progressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    
+                    <!-- Status Messages -->
+                    <div id="statusMessage" class="text-sm text-gray-600 mb-2">
+                        Analysing your brand visibility...
+                    </div>
+                    
+                    <!-- Time Estimation -->
+                    <div id="timeEstimate" class="text-xs text-gray-500 mb-2">
+                        Estimated time remaining: ~2 minutes
+                    </div>
+                    
+                    <!-- Progress Steps -->
+                    <div class="text-xs text-gray-500 space-y-1">
+                        <div id="step1" class="flex items-center progress-step">
+                            <span class="w-4 h-4 rounded-full bg-gray-300 mr-2"></span>
+                            <span>Generating search queries</span>
+                        </div>
+                        <div id="step2" class="flex items-center progress-step">
+                            <span class="w-4 h-4 rounded-full bg-gray-300 mr-2"></span>
+                            <span>Searching across AI models</span>
+                        </div>
+                        <div id="step3" class="flex items-center progress-step">
+                            <span class="w-4 h-4 rounded-full bg-gray-300 mr-2"></span>
+                            <span>Analysing sentiment</span>
+                        </div>
+                        <div id="step4" class="flex items-center progress-step">
+                            <span class="w-4 h-4 rounded-full bg-gray-300 mr-2"></span>
+                            <span>Extracting competitors</span>
+                        </div>
+                        <div id="step5" class="flex items-center progress-step">
+                            <span class="w-4 h-4 rounded-full bg-gray-300 mr-2"></span>
+                            <span>Generating insights</span>
+                        </div>
+                        <div id="step6" class="flex items-center progress-step">
+                            <span class="w-4 h-4 rounded-full bg-gray-300 mr-2"></span>
+                            <span>Generating recommendations</span>
+                        </div>
+                        <div id="step7" class="flex items-center progress-step">
+                            <span class="w-4 h-4 rounded-full bg-gray-300 mr-2"></span>
+                            <span>Finalising analysis</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div id="results" class="hidden">
+                <!-- Score Section - Split into Grade and Visibility % -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- Grade Section -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h2 class="text-2xl font-bold text-center mb-4 text-indigo-600">Performance Grade</h2>
+                        <div id="scoreDisplay" class="score-display mb-4"></div>
+                        <div class="text-center text-gray-600">
+                            <p class="text-sm">Based on AI search result coverage</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Visibility Percentage Section -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h2 class="text-2xl font-bold text-center mb-4 text-green-600">Visibility Percentage</h2>
+                        <div id="visibilityDisplay" class="score-display mb-4"></div>
+                        <div class="text-center text-gray-600">
+                            <p class="text-sm">How visible your brand is</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Summary Section -->
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                    <div id="summaryDisplay" class="text-center text-lg"></div>
+                </div>
+
+                <!-- Sentiment Slider -->
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                    <h3 class="text-xl font-semibold mb-4">Average Sentiment</h3>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm text-gray-600">Negative</span>
+                        <input type="range" id="sentimentSlider" min="-1" max="1" step="0.01" 
+                               class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" disabled>
+                        <span class="text-sm text-gray-600">Positive</span>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <span id="sentimentValue" class="text-lg font-semibold text-gray-700"></span>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="bg-white rounded-lg shadow-lg">
+                    <div class="border-b border-gray-200">
+                        <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                            <button class="tab-btn active py-4 px-1 border-b-2 border-blue-500 text-blue-600 font-medium" 
+                                    data-tab="brand-mentions">
+                                Brand Mentions Table
+                            </button>
+                            <button class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium" 
+                                    data-tab="sentiment-summary">
+                                Sentiment Summary
+                            </button>
+                            <button class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium" 
+                                    data-tab="competitor-insights">
+                                Competitor Insights
+                            </button>
+                            <button class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium" 
+                                    data-tab="recommendations">
+                                Recommendations
+                            </button>
+                            <button class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium" 
+                                    data-tab="raw-outputs">
+                                Raw Outputs
+                            </button>
+                        </nav>
+                    </div>
+
+                    <div class="p-6">
+                        <!-- Brand Mentions Table Tab -->
+                        <div id="brand-mentions" class="tab-content active">
+                            <p class="text-gray-600 mb-4">
+                                This table shows where your brand is mentioned (visible) or not mentioned (not visible) in AI-generated search results for each query and model.
+                            </p>
+                            <div id="brandMentionsTable" class="table-container"></div>
+                        </div>
+
+                        <!-- Sentiment Summary Tab -->
+                        <div id="sentiment-summary" class="tab-content">
+                            
+                            <!-- Sentiment Summary Text -->
+                            <div class="mb-6">
+                                <h3 class="text-lg font-semibold mb-4 flex items-center">
+                                    <svg class="w-5 h-5 mr-2 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Overall Sentiment Analysis
+                                </h3>
+                            <div id="sentimentSummary" class="markdown-content"></div>
+                            </div>
+                            
+                            <!-- Strengths & Weaknesses Section -->
+                            <div class="mb-6">
+                                <h3 class="text-lg font-semibold mb-4 flex items-center">
+                                    <svg class="w-5 h-5 mr-2 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Strengths & Weaknesses
+                                </h3>
+                                <div id="sentimentAnalysisContent" class="sentiment-drivers-visual"></div>
+                            </div>
+                            
+                            <!-- Sentiment Drivers Section -->
+                            <div class="mb-6">
+                                <div id="sentimentDriversContent" class="sentiment-drivers-visual"></div>
+                            </div>
+                        </div>
+
+                        <!-- Competitor Insights Tab -->
+                        <div id="competitor-insights" class="tab-content">
+                            <p class="text-gray-600 mb-4">
+                                These competitor insights reveal your position in the AI search landscape. The pie chart shows the share of mentions for each competitor. Use this information to identify opportunities to differentiate and improve your brand's visibility.
+                            </p>
+                            <div id="competitorPlot" class="mb-6 flex justify-center w-full" style="min-height: 600px;"></div>
+                            <div id="competitorInsights" class="markdown-content"></div>
+                        </div>
+
+                        <!-- Recommendations Tab -->
+                        <div id="recommendations" class="tab-content">
+                            <div id="recommendationsContent" class="recommendations-visual"></div>
+                        </div>
+
+                        <!-- Raw Outputs Tab -->
+                        <div id="raw-outputs" class="tab-content">
+                            <p class="text-gray-600 mb-4">
+                                This section shows the raw AI-generated outputs and responses for transparency and further analysis.
+                            </p>
+                            <pre id="rawOutputs" class="bg-gray-100 p-4 rounded-lg overflow-x-auto text-sm"></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PDF Download -->
+                <div id="pdfDownload" class="mt-8 text-center hidden">
+                    <a id="pdfLink" href="#" 
+                       class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition-colors">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Download PDF Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab functionality
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active', 'border-blue-500', 'text-blue-600'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                button.classList.add('active', 'border-blue-500', 'text-blue-600');
+                button.classList.remove('border-transparent', 'text-gray-500');
+                
+                // Show corresponding content
+                const tabId = button.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Handle prompt mode switching
+        document.querySelectorAll('input[name="prompt_mode"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                const manualSection = document.getElementById('manualPromptsSection');
+                if (radio.value === 'manual' && radio.checked) {
+                    manualSection.classList.remove('hidden');
+                } else if (radio.value === 'auto' && radio.checked) {
+                    manualSection.classList.add('hidden');
+                }
+            });
+        });
+
+        // Form submission
+        document.getElementById('analysisForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('keyword', document.getElementById('keyword').value);
+            formData.append('brand_name', document.getElementById('brand_name').value);
+            formData.append('performance_mode', document.getElementById('performance_mode').checked);
+            formData.append('demo_mode', document.getElementById('demo_mode').checked);
+            
+            // Handle prompt mode
+            const promptMode = document.querySelector('input[name="prompt_mode"]:checked').value;
+            formData.append('prompt_mode', promptMode);
+            
+            if (promptMode === 'manual') {
+                // Collect custom prompts
+                const customPrompts = [];
+                for (let i = 1; i <= 5; i++) {
+                    const prompt = document.getElementById(`custom_prompt_${i}`).value.trim();
+                    if (prompt) {
+                        customPrompts.push(prompt);
+                    }
+                }
+                
+                if (customPrompts.length === 0) {
+                    alert('Please enter at least one custom search query.');
+                    return;
+                }
+                
+                formData.append('custom_prompts', JSON.stringify(customPrompts));
+            }
+            
+            if (!formData.get('brand_name') || !formData.get('keyword')) {
+                alert('Please fill in both Brand Name and Keyword fields.');
+                return;
+            }
+            
+            // Show loading and start progress
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('loading').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('analyzeBtn').disabled = true;
+            
+            // Initialize progress
+            updateProgress(0, 'Starting analysis...', 0);
+            
+            try {
+                // Start the analysis
+                const response = await fetch('http://127.0.0.1:8003/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const analysisInfo = await response.json();
+                console.log('[DEBUG] Analysis info:', analysisInfo);
+                
+                if (analysisInfo.error) {
+                    alert('Input Validation Error:\n\n' + analysisInfo.error + '\n\nPlease refine your inputs and try again.');
+                    document.getElementById('loading').classList.remove('show');
+                    document.getElementById('analyzeBtn').disabled = false;
+                    return;
+                }
+                
+                const analysisId = analysisInfo.analysis_id;
+                let progressInterval;
+                
+                // Start progress polling with analysis ID
+                const startProgressPolling = () => {
+                    progressInterval = setInterval(async () => {
+                        try {
+                            const progressResponse = await fetch(`http://127.0.0.1:8003/progress/${analysisId}`);
+                            if (progressResponse.ok) {
+                                const progressData = await progressResponse.json();
+                                console.log('[DEBUG] Progress polled:', progressData);
+                                updateProgress(progressData.step, progressData.message, progressData.percentage);
+                                
+                                // Check if analysis is complete
+                                if (progressData.percentage >= 100) {
+                                    clearInterval(progressInterval);
+                                    
+                                    // Fetch results
+                                    const resultsResponse = await fetch(`http://127.0.0.1:8003/results/${analysisId}`);
+                                    if (resultsResponse.ok) {
+                                        const result = await resultsResponse.json();
+                                        
+                                        if (result.error) {
+                                            alert(result.error);
+                                            document.getElementById('loading').classList.remove('show');
+                                            document.getElementById('analyzeBtn').disabled = false;
+                                            return;
+                                        }
+                                        
+                                        // Display results
+                                        displayResults(result);
+                                        
+                                        // Hide loading
+                                        document.getElementById('loading').classList.remove('show');
+                                        document.getElementById('analyzeBtn').disabled = false;
+                                    }
+                                }
+                            } else {
+                                console.log('[DEBUG] Progress poll failed:', progressResponse.status);
+                            }
+                        } catch (error) {
+                            console.log('Progress polling error:', error);
+                        }
+                    }, 500); // Poll every 500ms
+                };
+                
+                startProgressPolling();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while analysing your brand. Please try again.');
+                
+                // Stop progress polling on error
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                }
+                
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        });
+        
+        function updateProgress(step, message, percentage) {
+            // Update progress bar
+            document.getElementById('progressBar').style.width = percentage + '%';
+            
+            // Calculate time remaining based on progress
+            const timeEstimate = document.getElementById('timeEstimate');
+            let timeRemaining;
+            let statusText = message;
+            
+            if (percentage < 50) {
+                timeRemaining = Math.max(1, Math.round((50 - percentage) / 50 * 15));
+            } else if (percentage < 85) {
+                timeRemaining = Math.max(1, Math.round((85 - percentage) / 35 * 90));
+            } else {
+                timeRemaining = Math.max(1, Math.round((100 - percentage) / 15 * 10));
+            }
+            
+            // Update status message
+            document.getElementById('statusMessage').textContent = statusText;
+            
+            // Update time estimate
+            if (percentage >= 100) {
+                timeEstimate.textContent = 'Analysis complete!';
+            } else if (timeRemaining > 60) {
+                const minutes = Math.ceil(timeRemaining / 60);
+                timeEstimate.textContent = `Estimated time remaining: ~${minutes} minute${minutes > 1 ? 's' : ''}`;
+            } else {
+                timeEstimate.textContent = `Estimated time remaining: ~${timeRemaining} seconds`;
+            }
+            
+            // Update step indicators based on actual step
+            const steps = ['step1', 'step2', 'step3', 'step4', 'step5', 'step6', 'step7'];
+            
+            steps.forEach((stepId, index) => {
+                const stepElement = document.getElementById(stepId);
+                if (stepElement) {
+                    const stepIndicator = stepElement.querySelector('span');
+                    
+                    if (step > index + 1) {
+                        // Step completed
+                        stepIndicator.className = 'w-4 h-4 rounded-full bg-green-500 mr-2';
+                        stepElement.classList.add('completed');
+                        stepElement.classList.remove('active');
+                    } else if (step === index + 1) {
+                        // Current step
+                        stepIndicator.className = 'w-4 h-4 rounded-full bg-blue-500 mr-2';
+                        stepElement.classList.add('active');
+                        stepElement.classList.remove('completed');
+                    } else {
+                        // Future step
+                        stepIndicator.className = 'w-4 h-4 rounded-full bg-gray-300 mr-2';
+                        stepElement.classList.remove('active', 'completed');
+                    }
+                }
+            });
+        }
+
+        function generateVisualRecommendations(recommendationsText) {
+            // Parse the recommendations text and convert to visual format
+            const recommendations = [
+                {
+                    title: "Use Structured, Fact-Based Content",
+                    priority: "High",
+                    description: "Provide clear answers to questions with concise headings (H2/H3) to match query patterns"
+                },
+                {
+                    title: "Target Long-Tail, Question-Based Keywords",
+                    priority: "High",
+                    description: "Optimize content around natural-language queries and use tools like AlsoAsked, Answer the Public"
+                },
+                {
+                    title: "Implement Schema Markup",
+                    priority: "Medium",
+                    description: "Use structured data (JSON-LD) like FAQ, HowTo, Product, Review, Organization"
+                },
+                {
+                    title: "Write with Retrieval-Augmented Generation (RAG) in Mind",
+                    priority: "High",
+                    description: "Use explicit mentions of your brand, service, or product to help LLMs retrieve and attribute answers"
+                },
+                {
+                    title: "Create Internal Answer Hubs",
+                    priority: "Medium",
+                    description: "Build cluster content around key topics with one main pillar page + multiple supporting pages"
+                },
+                {
+                    title: "Optimize for Voice & Conversational Queries",
+                    priority: "Low",
+                    description: "Use natural phrasing and full-sentence questions with featured snippets-style answers"
+                },
+                {
+                    title: "Keep Content Fresh and Updated",
+                    priority: "Medium",
+                    description: "LLMs prioritize current and verified content with date references and regular updates"
+                },
+                {
+                    title: "Gain Citations from Reputable Sources",
+                    priority: "High",
+                    description: "LLMs trust pages referenced elsewhere - aim for backlinks from authority sites"
+                },
+                {
+                    title: "Be Brand-Identifiable in LLMs",
+                    priority: "High",
+                    description: "Include your brand name with key topics and mention location and niche for better attribution"
+                },
+                {
+                    title: "Monitor and Test Appearance in AI Tools",
+                    priority: "Medium",
+                    description: "Regularly test how your content appears in Google SGE, Bing Copilot, Perplexity, ChatGPT"
+                }
+            ];
+            
+            let html = '<div class="recommendations-visual">';
+            html += '<h3 class="text-lg font-semibold mb-4 flex items-center"><svg class="w-5 h-5 mr-2 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>Areas for Improvement</h3>';
+            
+            recommendations.forEach((rec, index) => {
+                // Convert priority to filled segments
+                let filledSegments;
+                switch(rec.priority) {
+                    case "High":
+                        filledSegments = 8; // 8 out of 10 segments filled
+                        break;
+                    case "Medium":
+                        filledSegments = 5; // 5 out of 10 segments filled
+                        break;
+                    case "Low":
+                        filledSegments = 3; // 3 out of 10 segments filled
+                        break;
+                    default:
+                        filledSegments = 5;
+                }
+                const totalSegments = 10;
+                
+                html += '<div class="recommendation-item">';
+                html += `<div class="recommendation-title">${index + 1}. ${rec.title}</div>`;
+                html += `<div class="text-sm text-gray-600 mb-2">${rec.description}</div>`;
+                html += '<div class="rating-bar-container">';
+                html += '<div class="rating-bar">';
+                
+                for (let i = 0; i < totalSegments; i++) {
+                    const isFilled = i < filledSegments;
+                    html += `<div class="rating-segment ${isFilled ? '' : 'empty'}"></div>`;
+                }
+                
+                html += '</div>';
+                html += `<div class="rating-label">${rec.priority} priority</div>`;
+                html += '</div>';
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            return html;
+        }
+        
+        function generateSentimentAnalysisVisual(sentimentAnalysis) {
+            if (!sentimentAnalysis) {
+                return '<div class="text-gray-500 text-center py-4">No sentiment analysis available</div>';
+            }
+            
+            const strengths = sentimentAnalysis.strengths || [];
+            const weaknesses = sentimentAnalysis.weaknesses || [];
+            
+            if (strengths.length === 0 && weaknesses.length === 0) {
+                return '<div class="text-gray-500 text-center py-4">No specific strengths or weaknesses found</div>';
+            }
+            
+            let html = '<div class="sentiment-drivers-visual">';
+            
+            // Strengths section
+            if (strengths.length > 0) {
+                html += '<div class="mb-6">';
+                html += '<h3 class="text-lg font-semibold mb-3 flex items-center text-green-600">';
+                html += '<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>';
+                html += 'Key Strengths</h3>';
+                html += '<ul class="space-y-2">';
+                strengths.forEach((strength, index) => {
+                    html += `<li class="flex items-start text-gray-700">`;
+                    html += `<span class="inline-block w-6 h-6 bg-green-100 text-green-600 rounded-full text-sm font-medium flex items-center justify-center mr-3 mt-0.5">${index + 1}</span>`;
+                    html += `<span>${strength}</span>`;
+                    html += `</li>`;
+                });
+                html += '</ul>';
+                html += '</div>';
+            }
+            
+            // Weaknesses section
+            if (weaknesses.length > 0) {
+                html += '<div>';
+                html += '<h3 class="text-lg font-semibold mb-3 flex items-center text-orange-600">';
+                html += '<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>';
+                html += 'Areas for Improvement</h3>';
+                html += '<ul class="space-y-2">';
+                weaknesses.forEach((weakness, index) => {
+                    html += `<li class="flex items-start text-gray-700">`;
+                    html += `<span class="inline-block w-6 h-6 bg-orange-100 text-orange-600 rounded-full text-sm font-medium flex items-center justify-center mr-3 mt-0.5">${index + 1}</span>`;
+                    html += `<span>${weakness}</span>`;
+                    html += `</li>`;
+                });
+                html += '</ul>';
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function generateSentimentDriversVisual(sentimentDrivers) {
+            if (!sentimentDrivers || sentimentDrivers.length === 0) {
+                return '<div class="text-gray-500 text-center py-4">No sentiment drivers available</div>';
+            }
+            
+            let html = '<div class="sentiment-drivers-visual">';
+            html += '<h3 class="text-lg font-semibold mb-4 flex items-center">';
+            html += '<svg class="w-5 h-5 mr-2 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>';
+            html += 'Sentiment Drivers</h3>';
+            
+            sentimentDrivers.forEach((driver, index) => {
+                const strength = driver.strength || 5;
+                const maxStrength = 10;
+                const filledSegments = Math.round((strength / maxStrength) * 10);
+                
+                html += '<div class="sentiment-driver-item">';
+                html += `<div class="sentiment-driver-title">${driver.title}</div>`;
+                html += '<div class="sentiment-strength-bar-container">';
+                html += '<div class="sentiment-strength-bar">';
+                
+                for (let i = 0; i < 10; i++) {
+                    const isFilled = i < filledSegments;
+                    html += `<div class="sentiment-strength-segment ${isFilled ? '' : 'empty'}"></div>`;
+                }
+                
+                html += '</div>';
+                html += `<div class="sentiment-strength-label">${strength}/10</div>`;
+                html += '</div>';
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            return html;
+        }
+
+        function displayResults(result) {
+            // Score display (now shows grade instead of percentage)
+            document.getElementById('scoreDisplay').innerHTML = result.score;
+            document.getElementById('visibilityDisplay').innerHTML = `${result.visibility_percentage.toFixed(1)}%`;
+            document.getElementById('summaryDisplay').innerHTML = result.summary;
+            
+            // Sentiment slider
+            const sentimentSlider = document.getElementById('sentimentSlider');
+            const sentimentValue = document.getElementById('sentimentValue');
+            sentimentSlider.value = result.sentiment;
+            sentimentValue.textContent = result.sentiment.toFixed(2);
+            
+            // Brand mentions table
+            if (result.summary_df && result.summary_df.length > 0) {
+                displayBrandMentionsTable(result.summary_df);
+            }
+            
+            // Sentiment analysis (strengths & weaknesses)
+            if (result.sentiment_analysis) {
+                document.getElementById('sentimentAnalysisContent').innerHTML = generateSentimentAnalysisVisual(result.sentiment_analysis);
+            }
+            
+            // Sentiment drivers
+            if (result.sentiment_drivers) {
+                document.getElementById('sentimentDriversContent').innerHTML = generateSentimentDriversVisual(result.sentiment_drivers);
+            }
+            
+            // Sentiment summary
+            if (result.perception) {
+                document.getElementById('sentimentSummary').innerHTML = marked.parse(result.perception);
+            }
+            
+            // Competitor insights
+            if (result.competitor_insights) {
+                document.getElementById('competitorInsights').innerHTML = marked.parse(result.competitor_insights);
+            }
+            
+            // Recommendations
+            if (result.recommendations) {
+                document.getElementById('recommendationsContent').innerHTML = generateVisualRecommendations(result.recommendations);
+            }
+            
+            // Competitor plot
+            if (result.competitor_plot) {
+                const plotData = JSON.parse(result.competitor_plot);
+                Plotly.newPlot('competitorPlot', plotData.data, plotData.layout, {
+                    responsive: true,
+                    displayModeBar: false
+                });
+            }
+            
+            // Raw outputs
+            if (result.raw_results) {
+                document.getElementById('rawOutputs').textContent = JSON.stringify(result.raw_results, null, 2);
+            }
+            
+            // PDF download
+            if (result.pdf_path) {
+                const filename = result.pdf_path.split(/[\/]/).pop();
+                document.getElementById('pdfLink').href = `/download/${filename}`;
+                document.getElementById('pdfDownload').classList.remove('hidden');
+            }
+            
+            // Show results
+            document.getElementById('results').classList.remove('hidden');
+        }
+
+        function displayBrandMentionsTable(data) {
+            if (!data || data.length === 0) return; 
+            
+            const table = document.createElement('table');
+            table.className = 'w-full';
+            
+            // Create header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            const columns = Object.keys(data[0]);
+            
+            columns.forEach(column => {
+                const th = document.createElement('th');
+                th.textContent = column;
+                headerRow.appendChild(th);
+            });
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Create body
+            const tbody = document.createElement('tbody');
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                columns.forEach(column => {
+                    const td = document.createElement('td');
+                    td.textContent = row[column];
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            
+            table.appendChild(tbody);
+            
+            const container = document.getElementById('brandMentionsTable');
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
+    </script>
+</body>
+</html> 
